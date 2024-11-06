@@ -16,5 +16,5 @@ Built with the Next.js App Router, Postgres, TypeScript, Tailwind & Clerk
 - 🎁 ...much more
 
 ## Acknowledgements
-- (Josh)[https://github.com/joschan21] author of this great project
-- (Clerk)[https://clerk.com] for making this project possible
+- Josh [https://github.com/joschan21] author of this great project
+- Clerk [https://clerk.com] for making this project possible
