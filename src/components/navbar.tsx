@@ -7,11 +7,12 @@ import { SignOutButton } from "@clerk/nextjs";
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ArrowRight } from 'lucide-react';
+import { currentUser } from '@clerk/nextjs/server';
 
 
-export const Navbar = () => {
+export const Navbar = async () => {
 
-    const user = false;
+    const user = await currentUser();
 
     return (
         <nav className='sticky z-[100] h-16 inset-0 top-0 w-full border-b border-gray-200 bg-white/80 \
