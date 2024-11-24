@@ -52,7 +52,7 @@ export const DashboardPageContent = () => {
   return (
     <>
       <ul className="grid max-w-6xl grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {categories.map((category) => (
+        {categories && categories.map((category) => (
           <li key={category.name} className="relative group z-10 transition-all duration-200 hover:-translate-y-0.5">
             <div className="absolute z-0 inset-px rounded-lg bg-white" />
             <div className="pointer-events-none z-0 absolute inset-px rounded-lg shadow-sm transition-all duration-300 group-hover:shadow-md ring-1 ring-black/5" />
