@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 export const MONTHLY_PRO_PLAN = 7500;
 export const PRO_PLAN_CODE = "PLN_z0v7o4kxb4qj4so";
 
-export const ValidIPAddresses = ["52.31.139.75", "52.49.173.169", "52.214.14.220"];
+export const VALIDIPADDRESSES = ["52.31.139.75", "52.49.173.169", "52.214.14.220"];
 export const INITIALIZETRANSACTIONURL = `https://api.paystack.co/transaction/initialize`;
 export const VerifyTransactionUrl = `https://api.paystack.co/transaction/verify/:reference`;
 
@@ -47,6 +47,8 @@ export const getPaymentSessionURL = async (user: User) => {
             //callback_url: settingsUrl,
             metadata: {
                 userId: user.id,
+                userEmail: user?.emailAddresses[0]?.emailAddress,
+                userName: user?.fullName,
                 custom_fields: [
                     {
                         display_name: "Customer's Fullname",
