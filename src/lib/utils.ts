@@ -2,6 +2,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { Metadata } from 'next';
 import axios from "axios"
+import { formatDistanceToNow } from 'date-fns';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -10,6 +11,14 @@ export function cn(...inputs: ClassValue[]) {
 export const parseColor = (color: string) => {
   const hex = color.startsWith("#") ? color.slice(1) : color
   return parseInt(hex, 16)
+}
+
+export const formatDistanceToNowOrNull = (date: Date | null): string => {
+  if (!date) {
+    return 'Never'; // Or any other desired message
+  }
+
+  return formatDistanceToNow(date, { addSuffix: true });
 }
 
 export const formatTitle = (title: string): string => {

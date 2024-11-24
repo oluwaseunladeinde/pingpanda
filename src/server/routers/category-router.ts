@@ -1,15 +1,17 @@
-import { db } from "@/db";
-import { z } from "zod";
+import { db } from "@/db"
+import { router } from "../__internals/router"
+import { privateProcedure } from "../procedures"
 import { startOfDay, startOfMonth, startOfWeek } from "date-fns"
-import { router } from "../__internals/router";
-import { privateProcedure } from "../procedures";
-import { CATEGORY_NAME_VALIDATOR } from "@/lib/validators/category-validator";
-import { parseColor } from "@/lib/utils";
-import { HTTPException } from "hono/http-exception";
-
+import { z } from "zod"
+import { CATEGORY_NAME_VALIDATOR } from "@/lib/validators/category-validator"
+import { parseColor } from "@/lib/utils"
+import { HTTPException } from "hono/http-exception"
 
 export const categoryRouter = router({
     getEventCategories: privateProcedure.query(async ({ c, ctx }) => {
+        const now = new Date()
+        const firstDayOfMonth = startOfMonth(now)
+
         const categories = await db.eventCategory.findMany({
             where: { userId: ctx.user.id },
             select: {
@@ -19,58 +21,53 @@ export const categoryRouter = router({
                 color: true,
                 updatedAt: true,
                 createdAt: true,
+                events: {
+                    where: { createdAt: { gte: firstDayOfMonth } },
+                    select: {
+                        fields: true,
+                        createdAt: true,
+                    },
+                },
+                _count: {
+                    select: {
+                        events: {
+                            where: { createdAt: { gte: firstDayOfMonth } },
+                        },
+                    },
+                },
             },
             orderBy: { updatedAt: "desc" },
-        });
+        })
 
-        const categoriesWithCounts = await Promise.all(
-            categories.map(async (category) => {
-                const now = new Date()
-                const firstDayOfMonth = startOfMonth(now)
+        const categoriesWithCounts = categories.map((category) => {
+            const uniqueFieldNames = new Set<string>()
+            let lastPing: Date | null = null
 
-                const [uniqueFieldCount, eventsCount, lastPing] = await Promise.all([
-                    db.event.findMany({
-                        where: {
-                            EventCategory: { id: category.id },
-                            createdAt: { gte: firstDayOfMonth }
-                        },
-                        select: { fields: true },
-                        distinct: ["fields"],
-
-                    }).then((events) => {
-                        const fieldNames = new Set<string>()
-                        events.forEach((event) => {
-                            Object.keys(event.fields as object).forEach((fieldName) => {
-                                fieldNames.add(fieldName);
-                            })
-                        });
-                        return fieldNames.size
-                    }),
-
-                    db.event.count({
-                        where: {
-                            EventCategory: { id: category.id },
-                            createdAt: { gte: firstDayOfMonth }
-                        }
-                    }),
-
-                    db.event.findFirst({
-                        where: { EventCategory: { id: category.id } },
-                        orderBy: { createdAt: "desc" },
-                        select: { createdAt: true }
-                    }),
-                ]);
-
-                return {
-                    ...category,
-                    uniqueFieldCount,
-                    eventsCount,
-                    lastPing: lastPing?.createdAt || null,
+            category.events.forEach((event) => {
+                Object.keys(event.fields as object).forEach((fieldName) => {
+                    uniqueFieldNames.add(fieldName)
+                })
+                if (!lastPing || event.createdAt > lastPing) {
+                    lastPing = event.createdAt
                 }
-            }
-            ));
+            })
 
-        return c.superjson({ categories: categoriesWithCounts });
+            return {
+                id: category.id,
+                name: category.name,
+                emoji: category.emoji,
+                color: category.color,
+                updatedAt: category.updatedAt,
+                createdAt: category.createdAt,
+                uniqueFieldCount: uniqueFieldNames.size,
+                eventsCount: category._count.events,
+                lastPing,
+            }
+        })
+
+        console.log({ categoriesWithCounts })
+
+        return c.superjson({ categories: categoriesWithCounts })
     }),
 
     deleteCategory: privateProcedure
@@ -133,20 +130,27 @@ export const categoryRouter = router({
         .input(z.object({ name: CATEGORY_NAME_VALIDATOR }))
         .query(async ({ c, ctx, input }) => {
             const { name } = input
+
             const category = await db.eventCategory.findUnique({
                 where: { name_userId: { name, userId: ctx.user.id } },
-                include: { _count: { select: { events: true } } }
-            });
+                include: {
+                    _count: {
+                        select: {
+                            events: true,
+                        },
+                    },
+                },
+            })
 
             if (!category) {
                 throw new HTTPException(404, {
-                    message: `Category "${name}" not found`
+                    message: `Category "${name}" not found`,
                 })
             }
 
-            const hasEvents = category._count.events > 0;
+            const hasEvents = category._count.events > 0
 
-            return c.json({ hasEvents });
+            return c.json({ hasEvents })
         }),
 
     getEventsByCategoryName: privateProcedure
@@ -219,5 +223,5 @@ export const categoryRouter = router({
                 eventsCount,
                 uniqueFieldCount,
             })
-        })
-});
+        }),
+})

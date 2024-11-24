@@ -12,6 +12,7 @@ import { format, formatDistanceToNow } from "date-fns";
 import { ArrowRight, BarChart2, Clock, Database, Trash2 } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { DashboardEmptyState } from "./dashboard-empty-state";
+import { formatDistanceToNowOrNull } from "@/lib/utils";
 
 export const DashboardPageContent = () => {
 
@@ -23,6 +24,9 @@ export const DashboardPageContent = () => {
     queryFn: async () => {
       const res = await client.category.getEventCategories.$get()
       const { categories } = await res.json();
+
+      console.log({ categories });
+
       return categories;
     },
   });
@@ -73,7 +77,7 @@ export const DashboardPageContent = () => {
                   <Clock className="size-4 mr-2 text-brand-500 " />
                   <span className="font-medium">Last ping:</span>
                   <span className="ml-1">
-                    {category.lastPing ? formatDistanceToNow(category.lastPing + "ago") : "Never"}
+                    {formatDistanceToNowOrNull(category.lastPing)}
                   </span>
                 </div>
 
